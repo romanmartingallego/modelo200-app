@@ -10,51 +10,34 @@ st.set_page_config(page_title="Modelo 200", page_icon="📄")
 st.title("📄 Procesador de Modelo 200")
 st.write("Sube tus archivos PDF y una plantilla Excel. El sistema rellenará automáticamente los datos en la plantilla y te permitirá descargar el resultado.")
 
+# 🔁 Botón para reiniciar
 if st.button("🔄 Reiniciar formulario"):
     st.session_state.clear()
     st.rerun()
 
-# Subida de archivos
-uploaded_pdfs = st.file_uploader("🔼 Sube uno o más archivos PDF del Modelo 200", type="pdf", accept_multiple_files=True)
-uploaded_excel = st.file_uploader("📊 Sube la plantilla Excel", type="xlsx")
+# 🧠 Inicializar session_state para los archivos si no existen
+if "pdfs" not in st.session_state:
+    st.session_state.pdfs = None
+if "excel" not in st.session_state:
+    st.session_state.excel = None
 
-def extraer_ano(pdf_bytes):
-    with pdfplumber.open(pdf_bytes) as pdf:
-        for i, pagina in enumerate(pdf.pages):
-            texto = pagina.extract_text()
-            if not texto:
-                continue
-            match = re.search(r'\b(20[1-2][0-9])\d{11}[A-Z]?\b', texto)
-            if match:
-                return int(match.group(1))
-    return None
+# Subida de archivos, con control manual
+pdf_files = st.file_uploader("🔼 Sube uno o más archivos PDF del Modelo 200", type="pdf", accept_multiple_files=True, key="pdf_uploader")
+excel_file = st.file_uploader("📊 Sube la plantilla Excel", type="xlsx", key="excel_uploader")
 
-def extraer_codigos_valores(pdf_bytes):
-    resultados = []
-    patron = re.compile(r'(\d{5})\s+([-]?\d{1,3}(?:\.\d{3})*,\d{2})')
-    SECCIONES_RELEVANTES = [
-        "Balance: Activo",
-        "Balance: Patrimonio neto y pasivo",
-        "Cuenta de pérdidas y ganancias"
-    ]
-    with pdfplumber.open(pdf_bytes) as pdf:
-        for pagina in pdf.pages:
-            texto = pagina.extract_text()
-            if not texto:
-                continue
-            if not any(seccion in texto for seccion in SECCIONES_RELEVANTES):
-                continue
-            coincidencias = patron.findall(texto)
-            for codigo, valor in coincidencias:
-                valor_num = float(valor.replace('.', '').replace(',', '.'))
-                resultados.append((codigo, valor_num))
-    return resultados
+# Guardar archivos en sesión si el usuario los sube
+if pdf_files:
+    st.session_state.pdfs = pdf_files
+if excel_file:
+    st.session_state.excel = excel_file
 
-if uploaded_excel and uploaded_pdfs:
+# Mostrar mensaje si ya están cargados
+if st.session_state.excel and st.session_state.pdfs:
     st.success("✅ Archivos cargados correctamente.")
-    procesar = st.button("🚀 Procesar archivos")
+    if st.button("🚀 Procesar archivos"):
+        uploaded_excel = st.session_state.excel
+        uploaded_pdfs = st.session_state.pdfs
 
-    if procesar:
         excel_bytes = BytesIO(uploaded_excel.read())
         workbook = load_workbook(excel_bytes)
         sheet = workbook["Modelo 200 input"]
@@ -73,6 +56,38 @@ if uploaded_excel and uploaded_pdfs:
             for fila in sheet.iter_rows(min_row=11, min_col=3, max_col=3)
             if fila[0].value
         }
+
+        def extraer_ano(pdf_bytes):
+            with pdfplumber.open(pdf_bytes) as pdf:
+                for i, pagina in enumerate(pdf.pages):
+                    texto = pagina.extract_text()
+                    if not texto:
+                        continue
+                    match = re.search(r'\b(20[1-2][0-9])\d{11}[A-Z]?\b', texto)
+                    if match:
+                        return int(match.group(1))
+            return None
+
+        def extraer_codigos_valores(pdf_bytes):
+            resultados = []
+            patron = re.compile(r'(\d{5})\s+([-]?\d{1,3}(?:\.\d{3})*,\d{2})')
+            SECCIONES_RELEVANTES = [
+                "Balance: Activo",
+                "Balance: Patrimonio neto y pasivo",
+                "Cuenta de pérdidas y ganancias"
+            ]
+            with pdfplumber.open(pdf_bytes) as pdf:
+                for pagina in pdf.pages:
+                    texto = pagina.extract_text()
+                    if not texto:
+                        continue
+                    if not any(seccion in texto for seccion in SECCIONES_RELEVANTES):
+                        continue
+                    coincidencias = patron.findall(texto)
+                    for codigo, valor in coincidencias:
+                        valor_num = float(valor.replace('.', '').replace(',', '.'))
+                        resultados.append((codigo, valor_num))
+            return resultados
 
         for pdf in uploaded_pdfs:
             pdf_bytes = BytesIO(pdf.read())
