@@ -47,61 +47,65 @@ def extraer_codigos_valores(pdf_bytes):
     return resultados
 
 if uploaded_excel and uploaded_pdfs:
-    excel_bytes = BytesIO(uploaded_excel.read())
-    workbook = load_workbook(excel_bytes)
-    sheet = workbook["Modelo 200 input"]
-    
-    df_full = pd.read_excel(excel_bytes, sheet_name="Modelo 200 input", header=None)
-    headers_row = df_full.iloc[9]
+    st.success("✅ Archivos cargados correctamente.")
+    procesar = st.button("🚀 Procesar archivos")
 
-    columnas_ano = {
-        int(valor): idx
-        for idx, valor in headers_row.items()
-        if pd.notna(valor) and isinstance(valor, (int, float)) and 2000 <= int(valor) <= 2100
-    }
+    if procesar:
+        excel_bytes = BytesIO(uploaded_excel.read())
+        workbook = load_workbook(excel_bytes)
+        sheet = workbook["Modelo 200 input"]
 
-    codigos_en_plantilla = {
-        str(fila[0].value).strip().zfill(5): fila[0].row
-        for fila in sheet.iter_rows(min_row=11, min_col=3, max_col=3)
-        if fila[0].value
-    }
+        df_full = pd.read_excel(excel_bytes, sheet_name="Modelo 200 input", header=None)
+        headers_row = df_full.iloc[9]
 
-    for pdf in uploaded_pdfs:
-        pdf_bytes = BytesIO(pdf.read())
-        año_fiscal = extraer_ano(pdf_bytes)
-        if not año_fiscal:
-            st.warning(f"❌ No se pudo detectar el año fiscal en {pdf.name}")
-            continue
-        if año_fiscal not in columnas_ano:
-            st.warning(f"⚠️ El año {año_fiscal} no está en la plantilla. Saltando {pdf.name}")
-            continue
+        columnas_ano = {
+            int(valor): idx
+            for idx, valor in headers_row.items()
+            if pd.notna(valor) and isinstance(valor, (int, float)) and 2000 <= int(valor) <= 2100
+        }
 
-        pdf_bytes.seek(0)
-        datos = extraer_codigos_valores(pdf_bytes)
+        codigos_en_plantilla = {
+            str(fila[0].value).strip().zfill(5): fila[0].row
+            for fila in sheet.iter_rows(min_row=11, min_col=3, max_col=3)
+            if fila[0].value
+        }
 
-        col_idx = columnas_ano[año_fiscal]
-        col_letter = get_column_letter(col_idx + 1)
+        for pdf in uploaded_pdfs:
+            pdf_bytes = BytesIO(pdf.read())
+            año_fiscal = extraer_ano(pdf_bytes)
+            if not año_fiscal:
+                st.warning(f"❌ No se pudo detectar el año fiscal en {pdf.name}")
+                continue
+            if año_fiscal not in columnas_ano:
+                st.warning(f"⚠️ El año {año_fiscal} no está en la plantilla. Saltando {pdf.name}")
+                continue
 
-        for codigo, fila in codigos_en_plantilla.items():
-            sheet[f"{col_letter}{fila}"] = None
+            pdf_bytes.seek(0)
+            datos = extraer_codigos_valores(pdf_bytes)
 
-        encontrados = 0
-        for codigo, valor in datos:
-            codigo_formateado = str(codigo).strip().zfill(5)
-            if codigo_formateado in codigos_en_plantilla:
-                fila = codigos_en_plantilla[codigo_formateado]
-                sheet[f"{col_letter}{fila}"] = valor
-                encontrados += 1
+            col_idx = columnas_ano[año_fiscal]
+            col_letter = get_column_letter(col_idx + 1)
 
-        st.success(f"✅ {pdf.name} procesado correctamente ({encontrados} valores escritos en {año_fiscal})")
+            for codigo, fila in codigos_en_plantilla.items():
+                sheet[f"{col_letter}{fila}"] = None
 
-    output = BytesIO()
-    workbook.save(output)
-    output.seek(0)
+            encontrados = 0
+            for codigo, valor in datos:
+                codigo_formateado = str(codigo).strip().zfill(5)
+                if codigo_formateado in codigos_en_plantilla:
+                    fila = codigos_en_plantilla[codigo_formateado]
+                    sheet[f"{col_letter}{fila}"] = valor
+                    encontrados += 1
 
-    st.download_button(
-        label="📥 Descargar Excel Modificado",
-        data=output,
-        file_name="Modelo_200_completo.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
+            st.success(f"✅ {pdf.name} procesado correctamente ({encontrados} valores escritos en {año_fiscal})")
+
+        output = BytesIO()
+        workbook.save(output)
+        output.seek(0)
+
+        st.download_button(
+            label="📥 Descargar Excel Modificado",
+            data=output,
+            file_name="Modelo_200_completo.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
