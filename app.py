@@ -47,13 +47,15 @@ if "pdfs" in st.session_state and "excel" in st.session_state:
     if st.session_state.pdfs and st.session_state.excel:
         st.success("✅ Archivos cargados correctamente.")
         if st.button("🚀 Procesar archivos"):
-            uploaded_pdfs = st.session_state.pdfs
-            uploaded_excel = st.session_state.excel
-
-            excel_bytes = BytesIO(uploaded_excel.read())
-            workbook = load_workbook(excel_bytes)
-            sheet = workbook["Modelo 200 input"]
-
+            with st.spinner("⏳ Procesando archivos..."):
+        
+                uploaded_pdfs = st.session_state.pdfs
+                uploaded_excel = st.session_state.excel
+        
+                excel_bytes = BytesIO(uploaded_excel.read())
+                workbook = load_workbook(excel_bytes)
+                sheet = workbook["Modelo 200 input"]
+        
             df_full = pd.read_excel(excel_bytes, sheet_name="Modelo 200 input", header=None)
             headers_row = df_full.iloc[9]
 
