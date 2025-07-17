@@ -16,8 +16,10 @@ if "upload_key" not in st.session_state:
 
 # 🔁 Botón de reinicio total
 if st.button("🔄 Reiniciar formulario"):
-    st.session_state.clear()
+    if "upload_key" not in st.session_state:
+        st.session_state.upload_key = 0
     st.session_state.upload_key += 1
+    st.session_state.clear()
     st.rerun()
 
 # 📂 Subida de archivos controlada por clave dinámica
