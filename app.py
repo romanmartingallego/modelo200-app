@@ -10,6 +10,11 @@ st.set_page_config(page_title="Modelo 200", page_icon="📄")
 st.title("📄 Procesador de Modelo 200")
 st.write("Sube tus archivos PDF y una plantilla Excel. El sistema rellenará automáticamente los datos en la plantilla y te permitirá descargar el resultado.")
 
+# 🔁 Botón de reinicio
+if st.button("🔄 Reiniciar formulario"):
+    st.session_state.clear()
+    st.experimental_rerun()
+
 # Subida de archivos
 uploaded_pdfs = st.file_uploader("🔼 Sube uno o más archivos PDF del Modelo 200", type="pdf", accept_multiple_files=True)
 uploaded_excel = st.file_uploader("📊 Sube la plantilla Excel", type="xlsx")
