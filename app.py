@@ -15,12 +15,12 @@ if "upload_key" not in st.session_state:
     st.session_state.upload_key = 0
 
 # 🔁 Botón de reinicio total
+if "upload_key" not in st.session_state:
+    st.session_state.upload_key = 0
+
 if st.button("🔄 Reiniciar formulario"):
-    if "upload_key" not in st.session_state:
-        st.session_state.upload_key = 0
-    st.session_state.upload_key += 1
-    st.session_state.clear()
-    st.rerun()
+    st.session_state.upload_key += 1  # Aumentamos primero
+    st.rerun()  # Forzamos recarga → file_uploader cambia de clave y se reinicia
 
 # 📂 Subida de archivos controlada por clave dinámica
 pdf_files = st.file_uploader(
