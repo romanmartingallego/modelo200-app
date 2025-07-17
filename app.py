@@ -134,7 +134,7 @@ if "pdfs" in st.session_state and "excel" in st.session_state:
                 output.seek(0)
 
                 st.download_button(
-                    label="📥 Descargar Excel Modificado",
+                    label="📥 Descargar Financials",
                     data=output,
                     file_name="Modelo_200_completo.xlsx",
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
