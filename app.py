@@ -6,17 +6,6 @@ from openpyxl import load_workbook
 from openpyxl.utils import get_column_letter
 from io import BytesIO
 
-# ✅ Ocultar botón de GitHub (esquina superior derecha)
-hide_github_button = """
-    <style>
-        [data-testid="stAppViewContainer"] header div[data-testid="stHeader"] a {
-            display: none;
-        }
-    </style>
-"""
-st.markdown(hide_github_button, unsafe_allow_html=True)
-
-# 🎯 Configuración general
 st.set_page_config(page_title="Modelo 200", page_icon="📄")
 st.title("📄 Procesador de Modelo 200")
 st.write("Sube tus archivos PDF y una plantilla Excel. El sistema rellenará automáticamente los datos en la plantilla y te permitirá descargar el resultado.")
@@ -26,7 +15,7 @@ if "upload_key" not in st.session_state:
     st.session_state.upload_key = 0
 
 if st.button("🔄 Reiniciar formulario"):
-    st.session_state.upload_key += 1
+    st.session_state.upload_key += 1  # Cambiar clave fuerza reinicio visual de file_uploader
     st.rerun()
 
 # 📂 Subida de archivos
